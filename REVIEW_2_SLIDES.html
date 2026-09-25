@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review 2 - Restaurant Ordering and Management System (MongoDB)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+    :root {
+      --primary: #f97316;
+      --secondary: #0284c7;
+      --dark: #0f172a;
+      --light-bg: #f8fafc;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #e2e8f0;
+      color: #1e293b;
+      padding: 2rem 1rem;
+    }
+
+    .slide-deck {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    .slide {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 3rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      position: relative;
+      border: 1px solid var(--border);
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .slide-header {
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slide-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--dark);
+    }
+
+    .slide-rubric-tag {
+      background: #e0f2fe;
+      color: var(--secondary);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+    }
+
+    .slide-content {
+      flex: 1;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .slide-footer {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 0.8rem;
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    /* Cover Slide */
+    .cover-slide {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      justify-content: center;
+      text-align: center;
+      align-items: center;
+    }
+
+    .cover-title {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+
+    .cover-subtitle {
+      font-size: 1.3rem;
+      color: #f97316;
+      font-weight: 700;
+      margin-bottom: 2rem;
+    }
+
+    .cover-meta {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 1.25rem 2rem;
+      border-radius: 12px;
+      display: inline-block;
+      text-align: left;
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.88rem;
+    }
+
+    table th {
+      background: #f8fafc;
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+      font-weight: 700;
+      border-bottom: 2px solid var(--border);
+    }
+
+    table td {
+      padding: 0.65rem 0.9rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    /* Screenshot Box */
+    .screenshot-placeholder {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      margin: 1.25rem 0;
+      color: #64748b;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+    }
+
+    .screenshot-placeholder p {
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    .code-box {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+      line-height: 1.45;
+    }
+
+    .highlight-pill {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    @media print {
+      body { background: transparent; padding: 0; }
+      .slide { box-shadow: none; border: 1px solid #ddd; page-break-after: always; min-height: 95vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="slide-deck">
+
+    <!-- ================= SLIDE 1: COVER ================= -->
+    <div class="slide cover-slide">
+      <div>
+        <div style="font-size: 1.1rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.75rem;">
+          DBMS Lab Project — Review 2
+        </div>
+        <h1 class="cover-title">Restaurant Ordering & Management System</h1>
+        <div class="cover-subtitle">Using MongoDB NoSQL Database</div>
+
+        <div class="cover-meta">
+          <div><strong>Student Name:</strong> Sree Balasubramaniyan</div>
+          <div><strong>Registration No:</strong> 24BKT0162</div>
+          <div><strong>Course:</strong> Database Management Systems (DBMS Lab)</div>
+          <div><strong>Institution:</strong> Vellore Institute of Technology (VIT), Vellore</div>
+          <div><strong>Database Cluster:</strong> MongoDB Atlas (<code>restaurant_db</code>)</div>
+        </div>
+      </div>
+      <div class="slide-footer" style="border-top-color: rgba(255,255,255,0.1); color: #94a3b8; width: 100%;">
+        <span>Review 2 Evaluation</span>
+        <span>Slide 1 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 2: RUBRIC MAPPING ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Review 2 Grading Criteria & Deliverables Mapping</h2>
+        <span class="slide-rubric-tag">Evaluation Scope (10 Marks)</span>
+      </div>
+      <div class="slide-content">
+        <p style="margin-bottom: 1rem;">This presentation systematically addresses each criterion outlined in the Review 2 rubric:</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Evaluation Criterion</th>
+              <th>Marks</th>
+              <th>Deliverables Completed</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Database Implementation</strong><br><small>Collections, relationships, sample data</small></td>
+              <td><strong>2 Marks</strong></td>
+              <td>6 MongoDB collections created, hybrid referencing and embedding design, <strong>67 sample documents</strong> loaded.</td>
+              <td><span class="highlight-pill">Completed (67 Docs)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CRUD Operations Completed</strong><br><small>Functional customer and admin workflows</small></td>
+              <td><strong>3 Marks</strong></td>
+              <td>Full Create, Read, Update, Delete operations implemented across dedicated Customer & Admin dashboards.</td>
+              <td><span class="highlight-pill">Completed & Working</span></td>
+            </tr>
+            <tr>
+              <td><strong>Advanced NoSQL Features</strong><br><small>Aggregations, indexing, transactions</small></td>
+              <td><strong>5 Marks</strong></td>
+              <td>4 Multi-stage Aggregation Pipelines ($match, $group, $lookup, $unwind, $project, $sort), Text and Compound Indexing.</td>
+              <td><span class="highlight-pill">Completed (4 Pipelines)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Total</strong></td>
+              <td><strong>10 / 10</strong></td>
+              <td><strong>Full-Stack Web App + MongoDB Atlas Cloud Database</strong></td>
+              <td><span class="highlight-pill">Ready for Evaluation</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="background: #f1f5f9; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+          <strong>Target Deliverables Checklist:</strong> Database created on Atlas, Sample data loaded (67 records > 50 min), CRUD working end-to-end, Intermediate demo working on <code>http://localhost:3000</code>.
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 2 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 3: DATABASE IMPLEMENTATION ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Criterion 1: Database Implementation (2 Marks)</h2>
+        <span class="slide-rubric-tag">Collections, Relationships & 50+ Sample Records</span>
+      </div>
+      <div class="slide-content">
+        <p>Database created on <strong>MongoDB Atlas</strong> (<code>restaurant_db</code>) comprising <strong>6 Collections</strong> with <strong>67 Documents</strong>:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Collection Name</th>
+              <th>Document Count</th>
+              <th>Key Attributes</th>
+              <th>Mapping Strategy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>users</code></td>
+              <td><strong>5</strong></td>
+              <td>_id, name, email, password, phone, role, address</td>
+              <td>Parent Document (Customer & Admin roles)</td>
+            </tr>
+            <tr>
+              <td><code>restaurants</code></td>
+              <td><strong>4</strong></td>
+              <td>_id, name, cuisine, location, phone, rating, isOpen</td>
+              <td>Text indexed on { name, cuisine, location }</td>
+            </tr>
+            <tr>
+              <td><code>categories</code></td>
+              <td><strong>5</strong></td>
+              <td>_id, name, description</td>
+              <td>Referenced by MenuItems</td>
+            </tr>
+            <tr>
+              <td><code>menuItems</code></td>
+              <td><strong>26</strong></td>
+              <td>_id, restaurantId, categoryId, name, price, isAvailable</td>
+              <td>Compound indexed { restaurantId, categoryId, isAvailable }</td>
+            </tr>
+            <tr>
+              <td><code>orders</code></td>
+              <td><strong>15</strong></td>
+              <td>_id, userId, restaurantId, items[], totalAmount, status</td>
+              <td><strong>Embedded items[] array</strong>: { menuItemId, name, price, quantity }</td>
+            </tr>
+            <tr>
+              <td><code>reviews</code></td>
+              <td><strong>12</strong></td>
+              <td>_id, userId, restaurantId, rating (1-5), comment</td>
+              <td>Indexed on { restaurantId, createdAt }</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="screenshot-placeholder">
+          📷 [PASTE SCREENSHOT HERE: MongoDB Atlas web interface showing restaurant_db with 6 collections and 67 total documents]
+          <p>Shows collections list on cluster0.r6sjbfy.mongodb.net</p>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 3 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 4: CRUD OPERATIONS ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Criterion 2: Core CRUD Operations Completed (3 Marks)</h2>
+        <span class="slide-rubric-tag">Customer & Admin Dashboards</span>
+      </div>
+      <div class="slide-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <h4 style="color: var(--primary); margin-bottom: 0.5rem;">Customer Dashboard Capabilities:</h4>
+            <ul style="padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.6;">
+              <li><strong>CREATE:</strong> Place orders with embedded dishes, enter delivery address, calculate total bill.</li>
+              <li><strong>CREATE:</strong> Submit 1 to 5 star ratings and reviews for restaurants.</li>
+              <li><strong>READ:</strong> Browse restaurants with live text search and food category filters.</li>
+              <li><strong>READ:</strong> View personal Order History with color-coded live delivery status.</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="color: var(--secondary); margin-bottom: 0.5rem;">Administrator Dashboard Capabilities:</h4>
+            <ul style="padding-left: 1.2rem; font-size: 0.88rem; line-height: 1.6;">
+              <li><strong>CREATE:</strong> Add new restaurants and menu items via modal forms.</li>
+              <li><strong>READ:</strong> Track all live customer orders across restaurants; inspect user registry.</li>
+              <li><strong>UPDATE:</strong> Inline order status switcher (Placed ➔ Preparing ➔ Delivered).</li>
+              <li><strong>UPDATE / DELETE:</strong> Edit restaurant or menu details; delete cancelled records.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+          <div class="screenshot-placeholder" style="min-height: 140px;">
+            📷 [PASTE SCREENSHOT HERE: Customer Dashboard showing restaurant cards & cart basket]
+          </div>
+          <div class="screenshot-placeholder" style="min-height: 140px;">
+            📷 [PASTE SCREENSHOT HERE: Admin Dashboard showing Live Orders Tracker with Status dropdown]
+          </div>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 4 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 5: ADVANCED NOSQL 1 ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Criterion 3: Advanced NoSQL Feature 1 (5 Marks)</h2>
+        <span class="slide-rubric-tag">Multi-Stage Aggregation: Revenue by Restaurant</span>
+      </div>
+      <div class="slide-content">
+        <p><strong>Aggregation Pipeline:</strong> Groups orders by <code>restaurantId</code>, joins restaurant metadata, and calculates total revenue, order count, and average order value.</p>
+
+        <div class="code-box">
+Order.aggregate([
+  { $match: { status: { $ne: 'Cancelled' } } },
+  { $group: { 
+      _id: '$restaurantId', 
+      totalRevenue: { $sum: '$totalAmount' }, 
+      orderCount: { $sum: 1 }, 
+      avgOrderValue: { $avg: '$totalAmount' } 
+    } 
+  },
+  { $lookup: { from: 'restaurants', localField: '_id', foreignField: '_id', as: 'restaurant' } },
+  { $unwind: '$restaurant' },
+  { $project: { 
+      restaurantName: '$restaurant.name', 
+      cuisine: '$restaurant.cuisine', 
+      totalRevenue: 1, 
+      orderCount: 1, 
+      avgOrderValue: { $round: ['$avgOrderValue', 2] } 
+    } 
+  },
+  { $sort: { totalRevenue: -1 } }
+]);
+        </div>
+
+        <div class="screenshot-placeholder">
+          📷 [PASTE SCREENSHOT HERE: Live Aggregation Table from "MongoDB Aggregations" tab showing revenue results per restaurant]
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 5 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 6: ADVANCED NOSQL 2 ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Criterion 3: Advanced NoSQL Feature 2 (5 Marks)</h2>
+        <span class="slide-rubric-tag">Array Unwinding Aggregation: Top 5 Best-Selling Dishes</span>
+      </div>
+      <div class="slide-content">
+        <p><strong>Aggregation Pipeline ($unwind):</strong> Deconstructs the embedded <code>orders.items[]</code> array to aggregate sales volume and total revenue generated per dish.</p>
+
+        <div class="code-box">
+Order.aggregate([
+  { $match: { status: { $ne: 'Cancelled' } } },
+  { $unwind: '$items' },
+  { $group: { 
+      _id: '$items.name', 
+      totalQuantitySold: { $sum: '$items.quantity' }, 
+      totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } 
+    } 
+  },
+  { $project: { itemName: '$_id', totalQuantitySold: 1, totalRevenue: 1 } },
+  { $sort: { totalQuantitySold: -1 } },
+  { $limit: 5 }
+]);
+        </div>
+
+        <div class="screenshot-placeholder">
+          📷 [PASTE SCREENSHOT HERE: Live Top 5 Dishes ranking table showing units sold and revenue from the app]
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 6 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 7: INDEXING STRATEGY ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Criterion 3: Advanced NoSQL Feature 3 (5 Marks)</h2>
+        <span class="slide-rubric-tag">Database Indexing Strategy & Query Optimization</span>
+      </div>
+      <div class="slide-content">
+        <p>Explicit <strong>Text</strong> and <strong>Compound Indexes</strong> created to prevent collection scans (<code>COLLSCAN</code>) and ensure high-speed queries:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Target Collection</th>
+              <th>Index Keys Specification</th>
+              <th>Index Type</th>
+              <th>Query Optimization Justification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>restaurants</code></td>
+              <td><code>{ name: "text", cuisine: "text", location: "text" }</code></td>
+              <td><span class="highlight-pill">Text Index</span></td>
+              <td>Enables lightning-fast multi-keyword search across restaurant names, food types, and addresses.</td>
+            </tr>
+            <tr>
+              <td><code>menuItems</code></td>
+              <td><code>{ restaurantId: 1, categoryId: 1, isAvailable: 1 }</code></td>
+              <td><span class="highlight-pill">Compound</span></td>
+              <td>Accelerates combined filtering of menu items by restaurant and category without table scan.</td>
+            </tr>
+            <tr>
+              <td><code>orders</code></td>
+              <td><code>{ userId: 1, orderDate: -1 }</code></td>
+              <td><span class="highlight-pill">Compound</span></td>
+              <td>Enables instant retrieval and reverse chronological sorting of user order histories.</td>
+            </tr>
+            <tr>
+              <td><code>reviews</code></td>
+              <td><code>{ restaurantId: 1, createdAt: -1 }</code></td>
+              <td><span class="highlight-pill">Compound</span></td>
+              <td>Speeds up aggregation queries for calculating live restaurant ratings.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="screenshot-placeholder">
+          📷 [PASTE SCREENSHOT HERE: MongoDB Atlas "Indexes" tab or Web App Index Inspector showing compound and text indexes]
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 7 of 8</span>
+      </div>
+    </div>
+
+    <!-- ================= SLIDE 8: SUMMARY & VIVA READINESS ================= -->
+    <div class="slide">
+      <div class="slide-header">
+        <h2 class="slide-title">Conclusion & Deliverables Verification</h2>
+        <span class="slide-rubric-tag">Review 2 Summary</span>
+      </div>
+      <div class="slide-content">
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem;">
+          <h4 style="color: #0f172a; margin-bottom: 0.5rem;">Deliverables Checklist (10/10 Marks):</h4>
+          <ul style="padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.8;">
+            <li>✅ <strong>Database Created:</strong> Connected to live MongoDB Atlas cluster (<code>restaurant_db</code>).</li>
+            <li>✅ <strong>Sample Data Loaded:</strong> 67 documents seeded across 6 collections (exceeds 50 minimum requirement).</li>
+            <li>✅ <strong>CRUD Operations Working:</strong> Dedicated Customer and Administrator authenticated dashboards.</li>
+            <li>✅ <strong>Advanced NoSQL Features:</strong> 4 Aggregation pipelines + Text and Compound Indexes.</li>
+            <li>✅ <strong>Intermediate Demonstration:</strong> Live system running on <code>http://localhost:3000</code>.</li>
+            <li>✅ <strong>Source Code Repository:</strong> Clean, well-structured Node.js/Express/MongoDB codebase.</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+          <h3 style="color: #0f172a;">Thank You!</h3>
+          <p style="color: #64748b; margin-top: 0.25rem;">Ready for Professor Demonstration & Viva Examination</p>
+        </div>
+      </div>
+      <div class="slide-footer">
+        <span>Sree Balasubramaniyan (24BKT0162) • DBMS Lab</span>
+        <span>Slide 8 of 8</span>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

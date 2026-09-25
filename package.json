@@ -1,0 +1,26 @@
+{
+  "name": "restaurant-management-system",
+  "version": "1.0.0",
+  "description": "Restaurant Ordering and Management System using MongoDB - DBMS Lab Project (Review 1 & 2)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "keywords": [
+    "mongodb",
+    "express",
+    "restaurant",
+    "dbms",
+    "nosql"
+  ],
+  "author": "Sree Balasubramaniyan (24BKT0162)",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb-memory-server": "^9.2.0",
+    "mongoose": "^8.3.4"
+  }
+}

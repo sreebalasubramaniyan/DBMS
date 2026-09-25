@@ -1,0 +1,378 @@
+================================================================================
+DBMS – LAB PROJECT
+REVIEW 2: DATABASE IMPLEMENTATION & CORE FUNCTIONALITIES (10 MARKS)
+RESTAURANT ORDERING AND MANAGEMENT SYSTEM USING MONGODB
+================================================================================
+Student Name : Sree Balasubramaniyan
+Reg Number   : 24BKT0162
+Institution  : VIT Vellore
+Database     : MongoDB Atlas Cloud (restaurant_db)
+Cluster URI  : cluster0.r6sjbfy.mongodb.net
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 1: TITLE SLIDE
+--------------------------------------------------------------------------------
+DBMS – LAB PROJECT
+REVIEW 2
+
+RESTAURANT ORDERING AND MANAGEMENT SYSTEM USING MONGODB
+
+SREE BALASUBRAMANIYAN
+24BKT0162
+VIT VELLORE
+
+
+--------------------------------------------------------------------------------
+SLIDE 2: REVIEW 2 OBJECTIVES & EVALUATION RUBRIC (10 MARKS)
+--------------------------------------------------------------------------------
+Objective: Assess implementation progress and effective use of NoSQL features.
+
+RUBRIC CRITERIA & DELIVERABLES MAPPING:
+
+1. Database Implementation (Collections, Relationships, Sample Data) [2 Marks]
+   - Status: COMPLETED
+   - Deliverables: 6 Collections created on MongoDB Atlas, Document references and embedded arrays implemented, 67 sample documents loaded (Exceeds the 50 minimum requirement).
+
+2. CRUD Operations Completed [3 Marks]
+   - Status: COMPLETED
+   - Deliverables: Full Create, Read, Update, Delete operations implemented across dedicated Customer and Admin authenticated portals.
+
+3. Advanced NoSQL Features (Aggregation, Indexing, Transactions) [5 Marks]
+   - Status: COMPLETED
+   - Deliverables: 4 Multi-stage MongoDB Aggregation Pipelines ($match, $group, $lookup, $unwind, $project, $sort), Text and Compound Indexes for high query performance.
+
+Total Marks: 10 / 10
+
+
+--------------------------------------------------------------------------------
+SLIDE 3: DATABASE IMPLEMENTATION & 6 COLLECTIONS (CRITERION 1 - 2 MARKS)
+--------------------------------------------------------------------------------
+Database created on MongoDB Atlas: "restaurant_db"
+
+6 Collections Implemented:
+1. users (5 documents)
+   - Key fields: _id, name, email, password, phone, role (customer/admin), address, createdAt
+   - Purpose: Stores customer accounts and administrator credentials.
+
+2. restaurants (4 documents)
+   - Key fields: _id, name, cuisine, location, phone, rating, isOpen
+   - Purpose: Stores restaurant profiles and status in Vellore.
+
+3. categories (5 documents)
+   - Key fields: _id, name, description
+   - Purpose: Categorizes menu items (Biryani, Beverages, Desserts, Burgers, Pizzas).
+
+4. menuItems (26 documents)
+   - Key fields: _id, restaurantId, categoryId, name, description, price, isAvailable
+   - Purpose: Stores restaurant dishes with prices and availability.
+
+5. orders (15 documents)
+   - Key fields: _id, userId, restaurantId, items[], totalAmount, status, deliveryAddress, orderDate
+   - Purpose: Stores customer orders with embedded ordered dish items.
+
+6. reviews (12 documents)
+   - Key fields: _id, userId, restaurantId, rating (1-5), comment, createdAt
+   - Purpose: Stores customer ratings and feedback.
+
+Total Documents Seeded: 67 Records (Exceeds 50 records rubric requirement).
+
+================================================================================
+[PASTE SCREENSHOT 1 HERE]
+Description: MongoDB Atlas web interface showing cluster0.r6sjbfy.mongodb.net, database "restaurant_db", and the 6 collections with document counts totaling 67 documents.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 4: ER-TO-NOSQL MAPPING & EMBEDDING STRATEGY
+--------------------------------------------------------------------------------
+The ER model is mapped to MongoDB using a hybrid Referencing and Embedding strategy:
+
+RELATIONSHIP MAPPING:
+• User -> Order: orders.userId (Referenced ObjectId)
+• Restaurant -> Menu Item: menuItems.restaurantId (Referenced ObjectId)
+• Category -> Menu Item: menuItems.categoryId (Referenced ObjectId)
+• Restaurant -> Order: orders.restaurantId (Referenced ObjectId)
+• User -> Review: reviews.userId (Referenced ObjectId)
+• Restaurant -> Review: reviews.restaurantId (Referenced ObjectId)
+• Order -> Order Items: Embedded inside orders.items[]
+
+WHY EMBED ORDER ITEMS?
+In a relational SQL database, order items require a separate normalized table (order_items) joined with orders. In MongoDB, embedding order items directly inside orders.items[]:
+1. Allows retrieving the entire order and invoice in a single disk read ($O(1)$ lookup).
+2. Avoids expensive multi-table joins.
+3. Preserves historical pricing at the exact moment of order placement.
+
+================================================================================
+[PASTE SCREENSHOT 2 HERE]
+Description: MongoDB Atlas document viewer showing an Order document with the embedded items array: [ { menuItemId, name, price, quantity } ].
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 5: CORE CRUD OPERATIONS COMPLETED (CRITERION 2 - 3 MARKS)
+--------------------------------------------------------------------------------
+Implemented across two dedicated role-based dashboards:
+
+CUSTOMER DASHBOARD (Role: customer):
+• CREATE: Place new orders with multiple dishes, address, and calculated totals.
+• CREATE: Submit ratings (1 to 5 stars) and reviews for restaurants.
+• READ: Browse restaurants with multi-attribute search and category filters.
+• READ: View personal Order History with live delivery status pills.
+
+ADMINISTRATOR DASHBOARD (Role: admin):
+• CREATE: Add new restaurants and new menu items.
+• READ: Track all live orders, monitor revenue/order statistics, view users.
+• UPDATE: Live inline order status changer:
+  [Placed] -> [Preparing] -> [Out for Delivery] -> [Delivered] -> [Cancelled]
+• UPDATE: Edit restaurant information and menu dish prices.
+• DELETE: Delete cancelled orders, remove menu items, or delete restaurants.
+
+================================================================================
+[PASTE SCREENSHOT 3 HERE]
+Description: Login screen at http://localhost:3000 showing Customer and Admin credentials.
+================================================================================
+
+================================================================================
+[PASTE SCREENSHOT 4 HERE]
+Description: Customer Dashboard showing restaurant cards, food search, and shopping basket.
+================================================================================
+
+================================================================================
+[PASTE SCREENSHOT 5 HERE]
+Description: Customer Order History showing placed orders and live colored status pills.
+================================================================================
+
+================================================================================
+[PASTE SCREENSHOT 6 HERE]
+Description: Admin Dashboard showing Live Orders Tracker with inline status dropdown selector.
+================================================================================
+
+================================================================================
+[PASTE SCREENSHOT 7 HERE]
+Description: Admin Dashboard showing Restaurants CRUD table or Menu Items CRUD table with Edit and Delete buttons.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 6: ADVANCED NOSQL FEATURE 1 - REVENUE AGGREGATION (CRITERION 3 - 5 MARKS)
+--------------------------------------------------------------------------------
+AGGREGATION PIPELINE 1: REVENUE AND ORDER VOLUME BY RESTAURANT
+Purpose: Multi-stage pipeline calculating total sales revenue, order counts, and average order value per restaurant.
+
+MongoDB Aggregation Pipeline Stages:
+Order.aggregate([
+  // Stage 1: Filter out cancelled orders
+  { $match: { status: { $ne: 'Cancelled' } } },
+
+  // Stage 2: Group by restaurantId and calculate metrics
+  {
+    $group: {
+      _id: '$restaurantId',
+      totalRevenue: { $sum: '$totalAmount' },
+      orderCount: { $sum: 1 },
+      avgOrderValue: { $avg: '$totalAmount' }
+    }
+  },
+
+  // Stage 3: Join with restaurants collection
+  {
+    $lookup: {
+      from: 'restaurants',
+      localField: '_id',
+      foreignField: '_id',
+      as: 'restaurant'
+    }
+  },
+
+  // Stage 4: Unwind the joined restaurant array
+  { $unwind: '$restaurant' },
+
+  // Stage 5: Project formatted fields
+  {
+    $project: {
+      restaurantName: '$restaurant.name',
+      cuisine: '$restaurant.cuisine',
+      totalRevenue: 1,
+      orderCount: 1,
+      avgOrderValue: { $round: ['$avgOrderValue', 2] }
+    }
+  },
+
+  // Stage 6: Sort descending by total revenue
+  { $sort: { totalRevenue: -1 } }
+]);
+
+Live Output Sample:
+1. Spice Hub           | Indian & Mughlai      | 4 Orders | Avg: ₹477.50 | Total: ₹1,910
+2. Burger House        | Fast Food & Grills    | 4 Orders | Avg: ₹380.00 | Total: ₹1,520
+3. Bella Italia        | Italian               | 3 Orders | Avg: ₹420.00 | Total: ₹1,260
+4. Sweet Treats & Cafe | Desserts & Beverages  | 3 Orders | Avg: ₹380.00 | Total: ₹1,140
+
+================================================================================
+[PASTE SCREENSHOT 8 HERE]
+Description: Web Application "MongoDB Aggregations (Review 2)" tab showing Pipeline 1 query and the live revenue performance table.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 7: ADVANCED NOSQL FEATURE 2 - ARRAY UNWINDING ($unwind)
+--------------------------------------------------------------------------------
+AGGREGATION PIPELINE 2: TOP 5 BEST-SELLING DISHES
+Purpose: Unwinds the embedded items[] array inside customer orders to aggregate individual dish popularity and revenue.
+
+MongoDB Aggregation Pipeline Stages:
+Order.aggregate([
+  // Stage 1: Filter active orders
+  { $match: { status: { $ne: 'Cancelled' } } },
+
+  // Stage 2: Deconstruct embedded items array into separate documents
+  { $unwind: '$items' },
+
+  // Stage 3: Group by dish name and sum quantity and revenue
+  {
+    $group: {
+      _id: '$items.name',
+      totalQuantitySold: { $sum: '$items.quantity' },
+      totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+    }
+  },
+
+  // Stage 4: Project clean field names
+  {
+    $project: {
+      itemName: '$_id',
+      totalQuantitySold: 1,
+      totalRevenue: 1
+    }
+  },
+
+  // Stage 5 & 6: Sort by quantity sold descending and limit to top 5
+  { $sort: { totalQuantitySold: -1 } },
+  { $limit: 5 }
+]);
+
+Live Output Sample:
+Rank 1 (Gold)   : Hyderabadi Chicken Biryani          | 5 Units Sold | ₹1,100 Revenue
+Rank 2 (Silver) : Iced Lemon Tea                      | 3 Units Sold | ₹210 Revenue
+Rank 3 (Bronze) : Grilled Paneer Wrap                 | 2 Units Sold | ₹300 Revenue
+Rank 4          : Strawberry Basil Mojito (Mocktail)  | 2 Units Sold | ₹220 Revenue
+Rank 5          : Warm Brownie with Vanilla Ice Cream | 2 Units Sold | ₹280 Revenue
+
+================================================================================
+[PASTE SCREENSHOT 9 HERE]
+Description: Web Application "MongoDB Aggregations (Review 2)" tab showing Top 5 Best-Selling Dishes ranking table.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 8: ADVANCED NOSQL FEATURE 3 - STATUS & REVIEW AGGREGATIONS
+--------------------------------------------------------------------------------
+AGGREGATION PIPELINE 3: ORDER STATUS DISTRIBUTION
+Order.aggregate([
+  { $group: { _id: '$status', count: { $sum: 1 } } },
+  { $project: { status: '$_id', count: 1, _id: 0 } },
+  { $sort: { count: -1 } }
+]);
+Output: Delivered: 11 | Preparing: 1 | Placed: 1 | Out for Delivery: 1 | Cancelled: 1
+
+AGGREGATION PIPELINE 4: DYNAMIC RESTAURANT RATINGS FROM REVIEWS
+Review.aggregate([
+  { $group: { _id: '$restaurantId', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+  { $lookup: { from: 'restaurants', localField: '_id', foreignField: '_id', as: 'restaurant' } },
+  { $unwind: '$restaurant' },
+  { $project: { restaurantName: '$restaurant.name', averageRating: { $round: ['$averageRating', 2] }, reviewCount: 1 } },
+  { $sort: { averageRating: -1 } }
+]);
+Output:
+• Spice Hub           : ★ 4.75 / 5.0 (4 customer reviews)
+• Bella Italia        : ★ 4.67 / 5.0 (3 customer reviews)
+• Sweet Treats & Cafe : ★ 4.50 / 5.0 (2 customer reviews)
+• Burger House        : ★ 4.33 / 5.0 (3 customer reviews)
+
+================================================================================
+[PASTE SCREENSHOT 10 HERE]
+Description: Web Application "MongoDB Aggregations" tab showing Order Status Breakdown and Restaurant Ratings.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 9: ADVANCED NOSQL FEATURE 4 - DATABASE INDEXING STRATEGY
+--------------------------------------------------------------------------------
+Explicit indexes created to eliminate Collection Scans (COLLSCAN) and optimize query speeds:
+
+1. restaurants Collection:
+   - Index: { name: "text", cuisine: "text", location: "text" }
+   - Type : Text Index
+   - Optimization: Enables multi-field text search across restaurant names, food types, and locations with index scan (IXSCAN).
+
+2. menuItems Collection:
+   - Index: { restaurantId: 1, categoryId: 1, isAvailable: 1 }
+   - Type : Compound Index
+   - Optimization: Drastically accelerates menu filtering when customers select a restaurant and category.
+
+3. orders Collection:
+   - Index: { userId: 1, orderDate: -1 }
+   - Type : Compound Index
+   - Optimization: Allows instantaneous retrieval and reverse-chronological sorting of customer order histories.
+
+4. reviews Collection:
+   - Index: { restaurantId: 1, createdAt: -1 }
+   - Type : Compound Index
+   - Optimization: Accelerates review lookups and aggregation pipelines for calculating live ratings.
+
+================================================================================
+[PASTE SCREENSHOT 11 HERE]
+Description: MongoDB Atlas "Indexes" tab or Web Application Database Indexing Strategy table showing compound and text indexes.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 10: DUAL DASHBOARDS & ACCESS CONTROL
+--------------------------------------------------------------------------------
+The system provides two distinct dashboards accessible via role-based credentials:
+
+CUSTOMER DASHBOARD:
+• Login Credential: sree@vit.ac.in / password123
+• Features: Browse restaurants, add dishes to cart, place orders, view personal order history with live status tracking, submit reviews.
+
+ADMINISTRATOR DASHBOARD:
+• Login Credential: admin@restaurant.com / adminpassword
+• Features: Revenue and order volume summary metrics, Live Orders tracker with status changer, Restaurant CRUD, Menu Items CRUD, User Directory, and live MongoDB Aggregation pipelines.
+
+================================================================================
+[PASTE SCREENSHOT 12 HERE]
+Description: Dual dashboard view (Customer vs Admin) demonstrating role separation.
+================================================================================
+
+
+--------------------------------------------------------------------------------
+SLIDE 11: DELIVERABLES CHECKLIST & LAB VIVA DEFENSE
+--------------------------------------------------------------------------------
+REVIEW 2 DELIVERABLES VERIFICATION:
+[✔] Database created on MongoDB Atlas (restaurant_db)
+[✔] Sample data loaded (67 documents > 50 minimum requirement)
+[✔] CRUD operations working across Customer and Admin portals
+[✔] Advanced NoSQL features (4 Aggregations + Text & Compound Indexes)
+[✔] Live intermediate demonstration running on http://localhost:3000
+[✔] Source code repository complete and documented
+
+COMMON PROFESSOR VIVA QUESTIONS & ANSWERS:
+
+Q1: Why choose MongoDB over Relational SQL for this project?
+A1: Menus and orders are naturally hierarchical documents. Storing items inside orders.items[] eliminates multi-table joins, delivers faster read performance, and accurately captures order history. MongoDB also provides native aggregation pipelines for real-time analytics.
+
+Q2: What is the purpose of the $unwind stage?
+A2: $unwind deconstructs the embedded items[] array in each order into individual documents, allowing us to group by dish name and aggregate total quantities sold across all orders.
+
+Q3: When do you use Referencing versus Embedding?
+A3: We use Referencing (ObjectIds) for independent entities like Users, Restaurants, and Categories. We use Embedding for tightly coupled, 1-to-many child data like Order Items that are always accessed with the parent order.
+
+Q4: What is the benefit of your compound index on menuItems?
+A4: Without an index, MongoDB scans every document in the collection (COLLSCAN). The compound index { restaurantId: 1, categoryId: 1, isAvailable: 1 } enables an Index Scan (IXSCAN), reducing query complexity from O(N) to O(log N).
+
+================================================================================
+END OF REVIEW 2 PRESENTATION TEXT
+Student: Sree Balasubramaniyan | 24BKT0162 | VIT Vellore
+================================================================================

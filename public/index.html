@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Ordering and Management System | MongoDB DBMS Project</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. LOGIN & REGISTRATION SCREEN (SHOWN WHEN NOT LOGGED IN) -->
+  <!-- ========================================== -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-badge" style="margin: 0 auto 0.75rem auto; width: 48px; height: 48px; font-size: 1.5rem;">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <h2>RestaurantHub Portal</h2>
+        <p class="student-tag" style="margin-top: 4px;">
+          <strong>Sree Balasubramaniyan</strong> (24BKT0162) • VIT Vellore DBMS Lab
+        </p>
+      </div>
+
+      <!-- Login / Register Switcher -->
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tab-login-btn" onclick="switchAuthTab('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Login
+        </button>
+        <button class="auth-tab-btn" id="tab-register-btn" onclick="switchAuthTab('register')">
+          <i class="fa-solid fa-user-plus"></i> Customer Sign Up
+        </button>
+      </div>
+
+      <!-- Quick Demo Credentials Chips for Lab Review -->
+      <div class="demo-credentials-box">
+        <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 0.4rem;">
+          ⚡ Quick Demo Login (Click to Auto-fill):
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="demo-chip-btn" onclick="fillCredentials('sree@vit.ac.in', 'password123')">
+            <i class="fa-solid fa-user"></i> Customer (Sree)
+          </button>
+          <button type="button" class="demo-chip-btn admin" onclick="fillCredentials('admin@restaurant.com', 'adminpassword')">
+            <i class="fa-solid fa-shield-halved"></i> Admin (Manager)
+          </button>
+        </div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address:</label>
+          <input type="email" id="login-email" class="form-control" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password:</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Dashboard
+        </button>
+      </form>
+
+      <!-- REGISTRATION FORM -->
+      <form id="register-form" style="display: none;" onsubmit="handleRegisterSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name:</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="e.g. Sree Balasubramaniyan" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address:</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="sree@vit.ac.in" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number:</label>
+          <input type="tel" id="reg-phone" class="form-control" placeholder="9876543210" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Delivery Address:</label>
+          <input type="text" id="reg-address" class="form-control" placeholder="Block D, VIT Vellore">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password:</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Create password" required>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+          <i class="fa-solid fa-user-plus"></i> Create Customer Account
+        </button>
+      </form>
+
+      <div style="margin-top: 1.25rem; text-align: center; font-size: 0.75rem; color: #94a3b8;">
+        Powered by MongoDB • Express.js • Node.js
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. MAIN APPLICATION (SHOWN AFTER SUCCESSFUL LOGIN) -->
+  <!-- ========================================== -->
+  <div id="app-container" style="display: none; flex-direction: column; min-height: 100vh;">
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+      <div class="nav-container">
+        <div class="logo-area">
+          <div class="logo-badge">
+            <i class="fa-solid fa-utensils"></i>
+          </div>
+          <div class="logo-text">
+            <h1>RestaurantHub</h1>
+            <div class="student-tag">
+              <strong>Sree Balasubramaniyan</strong> (24BKT0162) • VIT Vellore DBMS Lab
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-actions">
+          <!-- Logged In User Profile Info -->
+          <div class="user-profile-badge">
+            <i class="fa-solid fa-circle-user" style="color: var(--primary); font-size: 1.1rem;"></i>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem;" id="nav-user-name">User Name</div>
+              <div style="font-size: 0.72rem; color: #64748b;" id="nav-user-role-badge">Role</div>
+            </div>
+          </div>
+
+          <!-- Customer Cart Button (only visible in Customer Dashboard) -->
+          <button class="cart-btn" id="header-cart-btn" onclick="openCartModal()">
+            <i class="fa-solid fa-cart-shopping"></i> Cart
+            <span class="cart-count" id="cart-item-count">0</span>
+          </button>
+
+          <!-- Logout Button -->
+          <button class="btn-secondary" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;" onclick="handleLogout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+
+      <!-- ========================================== -->
+      <!-- A. CUSTOMER DASHBOARD -->
+      <!-- ========================================== -->
+      <section id="customer-dashboard" class="dashboard-section" style="display: none;">
+        
+        <!-- Welcome Hero Banner -->
+        <div class="hero-banner">
+          <div>
+            <h2 id="cust-welcome-title">Welcome to RestaurantHub</h2>
+            <p>Browse top restaurants in Vellore, customize meals, and track your orders in real time.</p>
+          </div>
+          <div class="hero-badge-group">
+            <span class="hero-pill"><i class="fa-solid fa-database"></i> MongoDB Document Store</span>
+            <span class="hero-pill"><i class="fa-solid fa-bolt"></i> Fast NoSQL Queries</span>
+          </div>
+        </div>
+
+        <!-- Customer Sub Navigation Tabs -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+          <button class="chip-btn active" id="cust-browse-subtab" onclick="switchCustomerSubtab('browse')">
+            <i class="fa-solid fa-store"></i> Browse Restaurants & Menus
+          </button>
+          <button class="chip-btn" id="cust-orders-subtab" onclick="switchCustomerSubtab('orders')">
+            <i class="fa-solid fa-receipt"></i> My Orders History
+          </button>
+        </div>
+
+        <!-- Customer Tab 1: Browse Restaurants -->
+        <div id="subtab-browse-container">
+          <!-- Search and Category Filters -->
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <input type="text" id="restaurant-search-input" class="search-input" placeholder="🔍 Search restaurants, cuisines (Biryani, Burger, Italian...)" oninput="filterRestaurants()">
+            </div>
+            <div class="category-chips" id="category-filter-chips">
+              <button class="chip-btn active" onclick="filterByCategory('')">All Categories</button>
+            </div>
+          </div>
+
+          <!-- Restaurant Cards Grid -->
+          <div id="restaurant-list-grid" class="restaurant-grid"></div>
+
+          <!-- Single Restaurant Detail & Menu View -->
+          <div id="restaurant-detail-view" style="display: none;">
+            <div class="restaurant-detail-header">
+              <div>
+                <button class="btn-secondary" onclick="backToRestaurantList()" style="margin-bottom: 0.75rem;">
+                  <i class="fa-solid fa-arrow-left"></i> Back to All Restaurants
+                </button>
+                <h2 id="detail-restaurant-name" style="font-size: 1.6rem; color: #0f172a;">Spice Hub</h2>
+                <p id="detail-restaurant-cuisine" style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.2rem;"></p>
+                <p id="detail-restaurant-location" style="font-size: 0.85rem; color: #64748b; margin-top: 0.2rem;"></p>
+              </div>
+              <div style="text-align: right;">
+                <div class="rating-badge" id="detail-restaurant-rating" style="display: inline-flex; font-size: 1.1rem; padding: 0.35rem 0.75rem;">
+                  ★ 4.8
+                </div>
+                <p style="font-size: 0.82rem; color: #16a34a; font-weight: 600; margin-top: 0.4rem;">
+                  <i class="fa-solid fa-clock"></i> Accepting Orders
+                </p>
+              </div>
+            </div>
+
+            <h3 style="margin-bottom: 1rem; color: #1e293b;"><i class="fa-solid fa-book-open"></i> Available Menu Items</h3>
+            <div class="menu-list-grid" id="detail-menu-grid"></div>
+
+            <!-- Reviews Section for Restaurant -->
+            <div class="reviews-section">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="color: #0f172a;"><i class="fa-solid fa-comments"></i> Customer Reviews & Ratings</h3>
+                <button class="btn-primary" onclick="openReviewModal()">
+                  <i class="fa-solid fa-pen"></i> Write a Review
+                </button>
+              </div>
+              <div id="detail-reviews-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Tab 2: Orders History -->
+        <div id="subtab-orders-container" style="display: none;">
+          <div class="admin-table-card">
+            <div class="table-header-row">
+              <h3 style="color: #0f172a;"><i class="fa-solid fa-clock-rotate-left"></i> Your Placed Orders</h3>
+              <span style="font-size: 0.85rem; color: var(--text-muted);" id="user-orders-count-label">0 Orders</span>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Restaurant</th>
+                    <th>Items Ordered</th>
+                    <th>Total Amount</th>
+                    <th>Status</th>
+                    <th>Order Date</th>
+                  </tr>
+                </thead>
+                <tbody id="customer-orders-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- B. ADMINISTRATOR DASHBOARD -->
+      <!-- ========================================== -->
+      <section id="admin-dashboard" class="dashboard-section" style="display: none;">
+        
+        <!-- Admin Welcome Banner -->
+        <div class="hero-banner" style="background: linear-gradient(135deg, #1e1b4b, #0f172a);">
+          <div>
+            <h2><i class="fa-solid fa-gauge-high"></i> Restaurant Administrator Dashboard</h2>
+            <p>Full control over Restaurants CRUD, Menu Management, Customer Orders, and Review 2 NoSQL Aggregations.</p>
+          </div>
+          <div class="hero-badge-group">
+            <span class="hero-pill" style="background: rgba(16, 185, 129, 0.2); border-color: #10b981;">
+              <i class="fa-solid fa-shield-check"></i> Admin Access Verified
+            </span>
+          </div>
+        </div>
+
+        <!-- Admin Overview Metrics Cards -->
+        <div class="stats-cards-grid">
+          <div class="stat-card">
+            <div class="stat-icon orange"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div class="stat-content">
+              <h3 id="stat-revenue">₹0</h3>
+              <p>Total Revenue</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue"><i class="fa-solid fa-bag-shopping"></i></div>
+            <div class="stat-content">
+              <h3 id="stat-orders">0</h3>
+              <p>Total Orders Placed</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green"><i class="fa-solid fa-shop"></i></div>
+            <div class="stat-content">
+              <h3 id="stat-restaurants">0</h3>
+              <p>Active Restaurants</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple"><i class="fa-solid fa-bowl-food"></i></div>
+            <div class="stat-content">
+              <h3 id="stat-menu-items">0</h3>
+              <p>Menu Items Listed</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Sub Navigation Tabs -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <button class="chip-btn active" id="admin-orders-tab-btn" onclick="switchAdminTab('orders')">
+            <i class="fa-solid fa-list-check"></i> Orders Management
+          </button>
+          <button class="chip-btn" id="admin-restaurants-tab-btn" onclick="switchAdminTab('restaurants')">
+            <i class="fa-solid fa-store"></i> Restaurants CRUD
+          </button>
+          <button class="chip-btn" id="admin-menu-tab-btn" onclick="switchAdminTab('menu')">
+            <i class="fa-solid fa-utensils"></i> Menu Items CRUD
+          </button>
+          <button class="chip-btn" id="admin-users-tab-btn" onclick="switchAdminTab('users')">
+            <i class="fa-solid fa-users"></i> Users Directory
+          </button>
+          <button class="chip-btn" id="admin-analytics-tab-btn" onclick="switchAdminTab('analytics')">
+            <i class="fa-solid fa-chart-pie"></i> MongoDB Aggregations (Review 2)
+          </button>
+        </div>
+
+        <!-- Admin Tab 1: Orders Management -->
+        <div id="admin-tab-orders" class="admin-table-card">
+          <div class="table-header-row">
+            <h3 style="color: #0f172a;"><i class="fa-solid fa-truck-fast"></i> Live Orders Tracker & Status Manager</h3>
+            <div>
+              <select id="admin-order-status-filter" class="form-control" style="width: auto; display: inline-block;" onchange="loadAdminOrders()">
+                <option value="">All Statuses</option>
+                <option value="Placed">Placed</option>
+                <option value="Preparing">Preparing</option>
+                <option value="Out for Delivery">Out for Delivery</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Restaurant</th>
+                  <th>Items (Quantity)</th>
+                  <th>Total</th>
+                  <th>Status (Update)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-orders-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Tab 2: Restaurants CRUD -->
+        <div id="admin-tab-restaurants" class="admin-table-card" style="display: none;">
+          <div class="table-header-row">
+            <h3 style="color: #0f172a;"><i class="fa-solid fa-shop"></i> Restaurant Directory (CRUD Operations)</h3>
+            <button class="btn-primary" onclick="openAddRestaurantModal()">
+              <i class="fa-solid fa-plus"></i> Add New Restaurant
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Cuisine</th>
+                  <th>Location</th>
+                  <th>Phone</th>
+                  <th>Rating</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-restaurants-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Tab 3: Menu Items CRUD -->
+        <div id="admin-tab-menu" class="admin-table-card" style="display: none;">
+          <div class="table-header-row">
+            <h3 style="color: #0f172a;"><i class="fa-solid fa-burger"></i> Menu Item Catalog (CRUD Operations)</h3>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="admin-menu-restaurant-filter" class="form-control" style="width: auto;" onchange="loadAdminMenuItems()">
+                <option value="">All Restaurants</option>
+              </select>
+              <button class="btn-primary" onclick="openAddMenuItemModal()">
+                <i class="fa-solid fa-plus"></i> Add New Menu Item
+              </button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dish Name</th>
+                  <th>Restaurant</th>
+                  <th>Category</th>
+                  <th>Price (₹)</th>
+                  <th>Availability</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-menu-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Tab 4: Users Directory -->
+        <div id="admin-tab-users" class="admin-table-card" style="display: none;">
+          <div class="table-header-row">
+            <h3 style="color: #0f172a;"><i class="fa-solid fa-id-card"></i> Registered Users Collection</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Address</th>
+                  <th>Registered On</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Admin Tab 5: Review 2 Aggregations & Analytics -->
+        <div id="admin-tab-analytics" style="display: none;">
+          
+          <!-- Aggregation 1: Revenue by Restaurant -->
+          <div class="aggregation-card">
+            <div class="agg-header">
+              <h3><i class="fa-solid fa-cash-register" style="color: var(--primary);"></i> Aggregation Pipeline 1: Revenue & Order Performance by Restaurant</h3>
+              <p>Calculates total revenue, order count, and average order value per restaurant using <code>$match</code>, <code>$group</code>, <code>$lookup</code>, and <code>$project</code>.</p>
+            </div>
+            
+            <div class="code-snippet-box">
+Order.aggregate([
+  { $match: { status: { $ne: 'Cancelled' } } },
+  { $group: { _id: '$restaurantId', totalRevenue: { $sum: '$totalAmount' }, orderCount: { $sum: 1 }, avgOrderValue: { $avg: '$totalAmount' } } },
+  { $lookup: { from: 'restaurants', localField: '_id', foreignField: '_id', as: 'restaurant' } },
+  { $unwind: '$restaurant' },
+  { $project: { restaurantName: '$restaurant.name', cuisine: '$restaurant.cuisine', totalRevenue: 1, orderCount: 1, avgOrderValue: { $round: ['$avgOrderValue', 2] } } },
+  { $sort: { totalRevenue: -1 } }
+]);
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Restaurant Name</th>
+                    <th>Cuisine</th>
+                    <th>Total Orders</th>
+                    <th>Avg Order Value</th>
+                    <th>Total Revenue</th>
+                  </tr>
+                </thead>
+                <tbody id="agg-revenue-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Aggregation 2: Top Selling Menu Items -->
+          <div class="aggregation-card">
+            <div class="agg-header">
+              <h3><i class="fa-solid fa-fire" style="color: #ef4444;"></i> Aggregation Pipeline 2: Top 5 Best-Selling Dishes ($unwind Array)</h3>
+              <p>Unwinds the embedded <code>orders.items[]</code> array to aggregate sales volume and total revenue generated per dish.</p>
+            </div>
+
+            <div class="code-snippet-box">
+Order.aggregate([
+  { $match: { status: { $ne: 'Cancelled' } } },
+  { $unwind: '$items' },
+  { $group: { _id: '$items.name', totalQuantitySold: { $sum: '$items.quantity' }, totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } } } },
+  { $project: { itemName: '$_id', totalQuantitySold: 1, totalRevenue: 1 } },
+  { $sort: { totalQuantitySold: -1 } },
+  { $limit: 5 }
+]);
+            </div>
+
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Dish Name</th>
+                    <th>Units Sold</th>
+                    <th>Total Revenue Generated</th>
+                  </tr>
+                </thead>
+                <tbody id="agg-top-items-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Aggregation 3 & 4: Status Breakdown & Review Analytics -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+            
+            <div class="aggregation-card">
+              <div class="agg-header">
+                <h3><i class="fa-solid fa-pie-chart" style="color: var(--secondary);"></i> Pipeline 3: Order Status Breakdown</h3>
+                <p>Groups all customer orders by delivery status.</p>
+              </div>
+              <div class="code-snippet-box">
+Order.aggregate([
+  { $group: { _id: '$status', count: { $sum: 1 } } },
+  { $project: { status: '$_id', count: 1, _id: 0 } },
+  { $sort: { count: -1 } }
+]);
+              </div>
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Order Count</th>
+                    </tr>
+                  </thead>
+                  <tbody id="agg-status-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="aggregation-card">
+              <div class="agg-header">
+                <h3><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Pipeline 4: Average Ratings & Reviews</h3>
+                <p>Computes average customer rating from the <code>reviews</code> collection.</p>
+              </div>
+              <div class="code-snippet-box">
+Review.aggregate([
+  { $group: { _id: '$restaurantId', averageRating: { $avg: '$rating' }, reviewCount: { $sum: 1 } } },
+  { $lookup: { from: 'restaurants', localField: '_id', foreignField: '_id', as: 'restaurant' } },
+  { $unwind: '$restaurant' },
+  { $project: { restaurantName: '$restaurant.name', averageRating: { $round: ['$averageRating', 2] }, reviewCount: 1 } },
+  { $sort: { averageRating: -1 } }
+]);
+              </div>
+              <div class="table-responsive">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Restaurant</th>
+                      <th>Reviews</th>
+                      <th>Calculated Rating</th>
+                    </tr>
+                  </thead>
+                  <tbody id="agg-ratings-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Advanced NoSQL Indexing Overview -->
+          <div class="aggregation-card" style="margin-top: 1.5rem;">
+            <div class="agg-header">
+              <h3><i class="fa-solid fa-key" style="color: #8b5cf6;"></i> Advanced NoSQL Feature: Database Indexing Strategy</h3>
+              <p>Optimized indexes created on collections for high performance querying.</p>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Collection</th>
+                    <th>Index Keys</th>
+                    <th>Index Type</th>
+                    <th>Optimization Purpose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>restaurants</code></td>
+                    <td><code>{ name: "text", cuisine: "text", location: "text" }</code></td>
+                    <td><span class="status-pill status-Placed">Text Index</span></td>
+                    <td>Instant multi-attribute search across restaurant name, food type, and location.</td>
+                  </tr>
+                  <tr>
+                    <td><code>menuItems</code></td>
+                    <td><code>{ restaurantId: 1, categoryId: 1, isAvailable: 1 }</code></td>
+                    <td><span class="status-pill status-Preparing">Compound Index</span></td>
+                    <td>Fast retrieval and filtering of dishes by restaurant and category.</td>
+                  </tr>
+                  <tr>
+                    <td><code>orders</code></td>
+                    <td><code>{ userId: 1, orderDate: -1 }</code></td>
+                    <td><span class="status-pill status-Delivered">Compound Index</span></td>
+                    <td>Immediate sorting and rendering of customer order history.</td>
+                  </tr>
+                  <tr>
+                    <td><code>reviews</code></td>
+                    <td><code>{ restaurantId: 1, createdAt: -1 }</code></td>
+                    <td><span class="status-pill status-Out">Compound Index</span></td>
+                    <td>Fast lookup of restaurant reviews for live aggregation calculation.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <p><strong>DBMS Lab Project (Review 1 & 2)</strong> • Restaurant Ordering and Management System using MongoDB</p>
+      <p style="margin-top: 4px; font-size: 0.8rem; color: #94a3b8;">Developed by Sree Balasubramaniyan (24BKT0162) • VIT Vellore</p>
+    </footer>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODALS -->
+  <!-- ========================================== -->
+
+  <!-- Cart & Checkout Modal -->
+  <div class="modal-backdrop" id="cart-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: #0f172a;"><i class="fa-solid fa-bag-shopping" style="color: var(--primary);"></i> Your Food Basket</h3>
+        <button class="modal-close" onclick="closeCartModal()">&times;</button>
+      </div>
+      <div id="cart-items-container" style="max-height: 240px; overflow-y: auto; margin-bottom: 1rem;"></div>
+      <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem;">
+          <span>Total Payable:</span>
+          <span id="cart-total-price" style="color: var(--primary);">₹0</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Delivery Address:</label>
+        <input type="text" id="cart-delivery-address" class="form-control" placeholder="e.g. Block D, Room 302, VIT Vellore">
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="closeCartModal()">Cancel</button>
+        <button class="btn-primary" style="flex: 2;" onclick="placeCustomerOrder()">Confirm & Place Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal-backdrop" id="review-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="color: #0f172a;"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Write a Review</h3>
+        <button class="modal-close" onclick="closeReviewModal()">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating (1 to 5 Stars):</label>
+        <select id="review-rating-select" class="form-control">
+          <option value="5">⭐⭐⭐⭐⭐ (5 - Outstanding)</option>
+          <option value="4">⭐⭐⭐⭐ (4 - Very Good)</option>
+          <option value="3">⭐⭐⭐ (3 - Average)</option>
+          <option value="2">⭐⭐ (2 - Below Average)</option>
+          <option value="1">⭐ (1 - Poor)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Feedback / Comments:</label>
+        <textarea id="review-comment-input" class="form-control" rows="3" placeholder="Share your experience regarding food taste, packaging, and delivery..."></textarea>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="closeReviewModal()">Cancel</button>
+        <button class="btn-primary" style="flex: 2;" onclick="submitRestaurantReview()">Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restaurant Modal (Add / Edit) -->
+  <div class="modal-backdrop" id="restaurant-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="restaurant-modal-title" style="color: #0f172a;">Add New Restaurant</h3>
+        <button class="modal-close" onclick="closeRestaurantModal()">&times;</button>
+      </div>
+      <input type="hidden" id="edit-restaurant-id">
+      <div class="form-group">
+        <label class="form-label">Restaurant Name:</label>
+        <input type="text" id="rest-name-input" class="form-control" placeholder="e.g. Royal Biryani House">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cuisine Type:</label>
+        <input type="text" id="rest-cuisine-input" class="form-control" placeholder="e.g. South Indian, North Indian, Continental">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Location / Address:</label>
+        <input type="text" id="rest-location-input" class="form-control" placeholder="e.g. Katpadi Road, Vellore">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact Phone:</label>
+        <input type="text" id="rest-phone-input" class="form-control" placeholder="e.g. 0416-2244555">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Rating (0 - 5):</label>
+        <input type="number" step="0.1" min="1" max="5" id="rest-rating-input" class="form-control" value="4.5">
+      </div>
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="closeRestaurantModal()">Cancel</button>
+        <button class="btn-primary" style="flex: 2;" onclick="saveRestaurant()">Save Restaurant</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Item Modal (Add / Edit) -->
+  <div class="modal-backdrop" id="menu-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="menu-modal-title" style="color: #0f172a;">Add New Menu Item</h3>
+        <button class="modal-close" onclick="closeMenuModal()">&times;</button>
+      </div>
+      <input type="hidden" id="edit-menu-id">
+      <div class="form-group">
+        <label class="form-label">Restaurant:</label>
+        <select id="menu-rest-select" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Food Category:</label>
+        <select id="menu-cat-select" class="form-control"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dish Name:</label>
+        <input type="text" id="menu-name-input" class="form-control" placeholder="e.g. Chicken Dum Biryani">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description:</label>
+        <input type="text" id="menu-desc-input" class="form-control" placeholder="e.g. Fragrant spiced basmati rice with marinated chicken">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price (₹):</label>
+        <input type="number" min="1" id="menu-price-input" class="form-control" placeholder="e.g. 220">
+      </div>
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+        <button class="btn-secondary" style="flex: 1;" onclick="closeMenuModal()">Cancel</button>
+        <button class="btn-primary" style="flex: 2;" onclick="saveMenuItem()">Save Menu Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
